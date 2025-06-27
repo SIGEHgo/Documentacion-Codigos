@@ -1,0 +1,113 @@
+---
+title: "Markers Size"
+author: "Enrique Cerón"
+format: html
+editor: visual
+---
+
+## Archivos
+
+Primero cargamos algunas librerías que necesitarémos, en caso de no tenerlas, debe instalarlas con instal.packages() antes de cargarlas.
+
+```{r}
+library(sf)
+library(openxlsx)
+library(openxlsx)
+library(stringr)
+library(purrr)
+library(leaflet)
+library(leaflet.extras)
+library(sf)
+library(htmltools)
+library(htmlwidgets)
+```
+
+Leemos nuestro archivo .shp y creamos un icono que nos guste y se adecué al mapa con makeIcon().
+
+```{r}
+union=read_sf("../Estaciones_g.gpkg")
+circle_marker <- makeIcon( iconUrl = "../CirculoA.png", 
+                            iconWidth = 25, iconHeight = 25,
+                            iconAnchorX = 10, iconAnchorY = 10, )
+```
+
+## Mapa
+
+Creamos ahora nuestro mapa, para ello usaremos primero leaflet() y posteriormente addHeatmap() y addMarkers(), donde especificaremos el usar nuestro icono previamente cargado.
+
+```{r}
+mapa_web=leaflet() |> addTiles()
+
+for(i in 2:12){
+  
+  mapa_web=mapa_web |> addHeatmap(data=union |> 
+    as("Spatial"),
+    radius = 20,
+    intensity = as.numeric(unlist(as.vector(unname(st_drop_geometry(union[,i]))))),
+    max=1500,minOpacity=0.5,
+    group = colnames(union)[i]) |> addMarkers(data=union |> 
+        as("Spatial"),
+        label =paste0(unlist(as.vector(unname(st_drop_geometry(union[,1]))))," : ",as.numeric(unlist(as.vector(unname(st_drop_geometry(union[,i])))))," usuarios"),
+        icon=circle_marker,
+        group = colnames(union)[i])
+  
+}
+
+```
+
+Ahora añadiremos los controles que nos permitan cambiar de capa, en nuestro caso son meses, este "menú" va a estar siempre abierto con nuestras especificaciones de collapsed=F.
+
+```{r}
+mapa_web=mapa_web |> 
+  addLayersControl(baseGroups = colnames(union)[2:12],
+  options = layersControlOptions(collapsed = F))
+```
+
+## Tamaño del Icono
+
+Ahora, utlizaremos la funcion onRender() para crear un código de JavaScript para personalizar nuestro mapa. Vamos a crear una función llamada resizeMakers, que extraiga el nivel de zoom en el mapa, y ajuste el tamaño de los iconos para que, a poco zoom, no aparezcan, y a partir de cierto zoom sí y ajuste su tamaño.
+
+```{r}
+mapa_web <- htmlwidgets::onRender(mapa_web, "
+  function(el, x) {
+    var map = this;
+    
+    function resizeMarkers() {
+      var zoom = map.getZoom();
+      map.eachLayer(function(layer) {
+        if (layer.options && layer.options.icon && layer.options.icon.options) {
+          var newSize;
+          if (zoom<=14) {
+            newSize = 0.005
+          } else {
+            newSize = (zoom+20)/2
+          }
+
+          var iconSize = [newSize, newSize];
+          layer.setIcon(
+            L.icon({
+              iconUrl: layer.options.icon.options.iconUrl,
+              iconSize: iconSize,
+              iconAnchor: [iconSize[0] / 2, iconSize[1] / 2]
+            })
+          );
+        }
+      });
+    }
+
+    // Llamar a resizeMarkers en eventos de zoom, cargar el mapa o cambiar la capa
+    map.on('zoomend', resizeMarkers);
+    map.whenReady(resizeMarkers);
+    map.on('baselayerchange',resizeMarkers);
+  }
+")
+```
+
+La útima parte nos permite que el tamaño de los iconos se comporten adecuadamente al hacer zoom, cambiar las capas y cargar el mapa.
+
+Finalmente, podemos visualizar nuestro mapa y guardarlo como un .html.
+
+```{r}
+mapa_web
+htmlwidgets::saveWidget(mapa_web,file = "mapa_web.html")
+```

@@ -1,0 +1,1 @@
+writeLines("Funciona!","output/prueba.txt")
