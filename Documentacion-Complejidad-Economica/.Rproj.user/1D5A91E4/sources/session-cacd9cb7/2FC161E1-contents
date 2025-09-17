@@ -1,0 +1,25 @@
+directorio = "Datos/Originales/Hidalgo/"
+archivos_csv = list.files(path = directorio, 
+                          pattern = ".csv", 
+                          all.files = T, 
+                          recursive = T, 
+                          full.names = T)
+
+archivos_csv = archivos_csv[!grepl("diccionario", archivos_csv)]
+nombres = archivos_csv |>  dirname() |>  dirname() |>  basename()
+
+cat("El archivo csv ha abrir es: ", archivos_csv, "\n")
+cat("El archivo csv tiene el nombre: ", nombres, "\n")
+
+
+i = 1
+denue = read.csv(archivos_csv[i]) |> 
+  dplyr::filter(cve_ent == 13)
+
+
+
+denue = denue |> 
+  dplyr::select(nom_estab, nombre_act, latitud, longitud) |> 
+  sf::st_as_sf(coords = c("longitud", "latitud"), crs = "EPSG:4326")
+  
+  

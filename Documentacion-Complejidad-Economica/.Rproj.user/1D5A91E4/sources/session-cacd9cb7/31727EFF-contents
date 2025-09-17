@@ -1,0 +1,12 @@
+raster::raster("")
+
+despues = raster::raster("Datos/Procesados/Actualizados/2025A/Agencias de cobranza y comunicaciones.tiff")
+antes = raster::raster("Datos/Procesados/Antiguos/Raster/Agencias de cobranza y comunicaciones.tiff")
+
+
+hist(x = raster::values(antes))
+hist(x = raster::values(despues))
+despues[despues]
+
+
+((dens - raster::minValue(x = dens))/(raster::maxValue(dens) - raster::minValue(x = dens)))*0.4
