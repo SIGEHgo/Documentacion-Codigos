@@ -1,7 +1,7 @@
 {
     "id": "24F096BD",
-    "path": "C:/Users/SIGEH/Desktop/Lalo/Gob/Extras/Documentacion-Complejidad-Economica/Tablero de Complejidad Económica.qmd",
-    "project_path": "Tablero de Complejidad Económica.qmd",
+    "path": "C:/Users/SIGEH/Desktop/Lalo/Gob/Extras/Documentacion-Complejidad-Economica/Tablero_de_Complejidad_Económica.qmd",
+    "project_path": "Tablero_de_Complejidad_Económica.qmd",
     "type": "quarto_markdown",
     "hash": "1820974335",
     "contents": "",
@@ -22,11 +22,11 @@
         "rmdVisualModeLocation": "35152:25494.400390625"
     },
     "folds": "",
-    "lastKnownWriteTime": 1758131285,
+    "lastKnownWriteTime": 1758134761,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1758131285674,
+    "last_content_update": 1758134761,
     "read_only": false,
     "read_only_alternatives": []
 }
