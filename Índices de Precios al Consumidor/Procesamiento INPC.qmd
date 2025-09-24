@@ -56,7 +56,7 @@ Pobre de aquel que quiera los datos de las 55 ciudades, serían más de 7 MIL CL
 
 ## Abrir Pestañas
 
-Es hora de pensar en una solución, pues el tiempo es oro, para ello empezarmos a usar las herramientas de DevTools.
+Es hora de pensar en una solución, pues el tiempo es oro, para ello empezaremos a usar las herramientas de DevTools.
 
 Al inspeccionar los elementos de la tabla de menú que funcionan como pestañas de clasificación para generar más pestañas, por ejemplo, "Indice general" nos encontraremos objetos com este:
 
@@ -106,7 +106,9 @@ Antes de descargar cabe notar algo, si vuelves a ejecutar el código aparecerá 
 
 Si nuevamente ejecutas el código ya no deberían aparecer los id de ninguna pestaña, de lo contrario, indicaría que no diste el tiempo sufuciente entre ejecuciones para que las pestañas se vayan cargando.
 
-Ahora si podemos descargar, recoemndamos la siguiente elección:
+Me gustaría dejar en claro que es posible crear un código que se ejecute solo una vez y abra todas las pestañas, sin embargo mis capacidades me impiden hacer uno que no se tarde más de 3 minutos, pues es necesario que el programa realice pausas para esperar eventos de carga, y esto lo vuelve muy poco práctico.
+
+Continunando, ahora sí podemos descargar, recomendamos la siguiente elección:
 
 ![](menu6.png) pues no todas las ciudades tienen datos antes del 2018 y la disposición por columnas es más fácil de tratar a continuación.
 
@@ -114,106 +116,45 @@ Repite el proceso con tantas ciudades como gustes.
 
 ## Clasificar con R
 
-Nuestro increible amigo Jair hizo el siguiente código:
+Nuestro amigo Jair hizo un código que después se actualizó y quedo el siguiente:
 
 ```{r}
 #INPC_Clasificar_2
-
 Extraer=function(ags_1){
   if("Quincenal" %in% ags_1$Periodicidad){
     ags_1=ags_1[!(grepl("(SCIAN 2018)",ags_1[,1])),seq_along(colnames(ags_1)) <= 9 | as.numeric(substr(colnames(ags_1),8,11))>=2018]
   }else{
     ags_1=ags_1[!(grepl("(SCIAN 2018)",ags_1[,1])),seq_along(colnames(ags_1)) <= 9 | substr(colnames(ags_1),5,6)%in%c(18,19,20,21,22,23,24,25)]
   }
-  
-  ags_1[,paste0(rep("class",5),"_",1:5)]=ags_1$Título |> 
-    sapply(\(x){
-      strsplit(x = x,split = "Índice general, ")
-    },simplify = T,USE.NAMES = F) |>lapply(\(z){z[2]}) |> 
-    unlist() |> 
-    sapply(\(y){
-      strsplit(y,split = "(?<=\\d.) ", perl=TRUE)
-    },simplify = T,USE.NAMES = F) |> 
-    sapply(\(w){
-
-      primer_digito=w[1]
+  ags_1[, paste0("class_", 1:5)] <- ags_1$Título |>
+    sapply(function(x) {
+      # 1. Extraer después de "Índice general, "
+      parte_util <- strsplit(x, split = "Índice general, ")[[1]][2]
       
-      ultimo_texto=w[length(w)]
-      if(length(w)==1){
-        lista_util=list()
-        lista_util[[1]]=NA
-        lista_util[[2]]=NA
-        lista_util[[3]]=NA
-        lista_util[[4]]=NA
-        lista_util[[5]]=NA
+      # 2. Split por expresiones numéricas
+      if (!is.na(parte_util)) {
+        partes <- strsplit(parte_util, split = ", (?=\\d)", perl = TRUE)[[1]]
+        partes <- stringr::str_squish(partes)
+      } else {
+        partes <- character(0)
       }
-      if(length(w)==2){
-        lista_util=list()
-        lista_util[[1]]=paste0(w,collapse = " ")
-        lista_util[[2]]=NA
-        lista_util[[3]]=NA
-        lista_util[[4]]=NA
-        lista_util[[5]]=NA
-      }
-      if(length(w)>=3){##Lidiamos con los intermedios
-        current_digito=primer_digito
-        lista_util=list()
-        ##Idea: 
-        ##Si length(w)>1 entonces sí hay almenos una clasificacion
-        ##Tomamos el numero (n=1)
-        ##En el siguiente elemento hay al menos 1 coma. Si al lado derecho de la coma 
-        # hay un número, entonces hay más clasificaciones
-        ## Definimos el elemento de la lista util actual como un paste
-        # de el número de la iteración anterior y el lado izquierdo  
-        # de la coma del elemento siguiente. Guardamos el lado derecho de la coma (número)
-        # para la iteración siguiente. 
-        ## Repetimos hasta que el lado derecho de la coma de la iteración anterior no sea un número
-        for(n in 2:(length(w)-1)){
-          current_position=w[n]
-          current_position_splitted=strsplit(current_position,split = ",")[[1]]
-          #print(current_position_splitted)
-          if(length(current_position_splitted)>2){#i.e. Hay comas en el texto
-            #print(current_position_splitted)
-            current_position_splitted_copy=current_position_splitted
-            current_position_splitted_copy[1]=
-              paste0(current_position_splitted_copy[1:(length(current_position_splitted_copy)-1)],collapse = ",")#Pegamos puro texto
-            current_position_splitted_copy[2]=
-              current_position_splitted_copy[length(current_position_splitted_copy)]
-            current_position_splitted=current_position_splitted_copy
-          }
-          lista_util[[n]]=paste0(c(current_digito|> stringr::str_squish(),current_position_splitted[1]|> stringr::str_squish()),collapse = " ")
-          current_digito=current_position_splitted[2]
-        }
-        lista_util[[length(w)]]=paste0(c(current_digito|> stringr::str_squish(),ultimo_texto |> stringr::str_squish()),collapse = " ")
-      }
-      lista_util =lista_util |> unlist()
-      if(length(lista_util)==2){
-        lista_util[[3]]=NA
-        lista_util[[4]]=NA
-        lista_util[[5]]=NA
-      }
-      if(length(lista_util)==3){
-        lista_util[[4]]=NA
-        lista_util[[5]]=NA
-      }
-      if(length(lista_util)==4){
-        lista_util[[4]]=NA
-        lista_util[[5]]=NA
-      }
+      #partes
+      length(partes) = 5
+      partes[is.na(partes)] = NA
       
-      return(lista_util)
-    }) |> t()
+      return(partes)
+    }) |>
+    t()
   return (ags_1)
 }
+
 ```
 
-Aqui se declara una función que llamamos "Extraer" que en escencia recibirá un data.frame y buscará en la columna "Título" comas y numeros para encontrar las posibles clasificaciones y colocarlas en nuevas columnas llamadas class_1,class_2,etc.
+Aqui se declara una función que llamamos "Extraer" que en escencia recibirá un data.frame y buscará en la columna "Título" comas espacios y numeros para encontrar las posibles clasificaciones y colocarlas en nuevas columnas llamadas class_1,class_2,etc.
 
-(la explico poco no por demeritar el trabajai de Jair, sino que aún es un poco complicada para mí entender lo que hace toda la función jeje). Un aplauso para él, a mí nunca se me pudo ocurrir.
+Cabe recalcar que lo primero que hace la función es quitar todas las entradas que contengan "por origen de los bienes (SCIAN 2018)", pues son entradas que viene si la página contaba con una pestaña "Índice de precios al consumidor, por origen de los bienes (SCIAN 2018)" que a nosotros no nos interesan por el momento. Además de quitar aquellas columnas de quincenas o meses anteriores a 2018, pues como digo no todas las ciudades cuentan con ellas.
 
-Sin embargo, lo primero que hace la función es quitar todas las entradas que contengan "por origen de los bienes (SCIAN 2018)", pues son entradas que viene si la página contaba con una pestaña "Índice de precios al consumidor, por origen de los bienes (SCIAN 2018)" que a nosotros no nos interesan por el momento. Además de quitar aquellas columnas de quincenas o meses anteriores a 2018, pues como digo no todas las ciudades cuentan con ellas.
-
-En nuestro caso este códigolo guardaremos con el nombre de "INPC_Clasificar_2.R"
+En nuestro caso este código lo guardaremos con el nombre de "INPC_Clasificar_2.R"
 
 ## Juntar
 
