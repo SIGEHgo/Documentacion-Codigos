@@ -1,0 +1,87 @@
+---
+title: "Revision de Indicadores"
+author: "Roberto"
+format: pdf
+editor: visual
+---
+
+## Revisión de Indicadores
+
+En el repositorio *Tablero_Indicadores* se identificó que existen indicadores que son citados dentro de el archivo *temporalidad.csv* y no se encuentran en sus respectivos archivos donde se extrae informacion dividios en *anual.csv*, *bianual.csv*, *mensual.csv*, *quinquenal.csv*, *trianual.csv* y *trimestral.csv* Asi como algunos indicadores que aparecen en las diferentes temporalidades pero no son citadas dentro de *temporalidad.csv*
+
+## Codigo Implementado
+
+Mediante las librerias **dplyr** y **stringr** utilizamos las funciones **filter()** ,**unique()** y **str_squish()** llamando las librerias necesarias:
+
+```{r}
+#| eval: false
+#| label: load-packages
+
+library(stringr)
+library(dplyr)
+```
+
+primero se realiza la carga del archivo *temporalidad.csv* y despues se utiliza **filter()** para filtrar la información dentro de *temporalidad.csv* y aplicar **str_squish()** para eliminar espacios en las cadenas de texto, de acuerdo a las etiquetas por periodo con el siguiente esquema:
+
+## Periodos
+
+- Anual
+- Bianual
+- Mensual
+- Quinquenal
+- Trianual
+- Trimestral
+
+```{r}
+#| eval: false
+temporalidad= read.csv("datos/temporalidad.csv")
+
+temp_periodo = temporalidad|> dplyr::filter(Temporalidad=="Periodo")
+temp_periodo$Indicador= stringr::str_squish(temp_periodo$Indicador)
+
+```
+
+Despues para cada archivo *periodo.csv* realizamos su carga correspondiente y seleccionando la columna Indicadores para aplicar **str_squish()** y asi poder comprimir la información de indicadores en cadenas de texto sin espacios y por ultimo aplicamos la función **unique()** pues en los archivos *periodo.csv* existen multiples elementos de un mismo indicador, por lo que eliminamos repeticiones
+
+```{r}
+#| eval: false
+
+periodo= read.csv("datos/periodo.csv")
+periodo$Indicador= stringr::str_squish(periodo$Indicador)
+periodo_unicos= periodo$Indicador |> unique()
+
+```
+
+Ya con los datos cargados y agrupados, pasamos a hacer la comparacion de cada uno de los archivos de temporalidad (anual, bianual, trimestral, etc.) contra cada uno de los filtrados del archivo *temporalidad.csv* mediante **%in%** que verifica sí los elementos de un arreglo se encuentran dentro de otro y se realiza en ambas direcciones pues se identifico que algunos indicadores en *temporalidad.csv* estan citados pero no aparecen en su respectivo archivo *periodo.csv* asi como indicadores en *periodo.csv* que no se citan dentro de *temporalidad.csv*
+
+```{r}
+#| eval: false
+
+periodo_unicos %in% temp_periodo$Indicador
+temp_trimestral$Indicador %in% trimestral_unicos
+
+```
+
+Con la salida de estos dos ultimos comandos se identidica con **TRUE** o **FALSE** los indicadores que coincideo y cuales no respectivamente, con lo cual podemos obener los indicadores no vinculados correctamente los cuales son:
+
+### Diferencias encontradas entre Temporalidad-Anual
+
+Datos que se encuentran en citados en Temporalidad pero no estan en Anual
+
+- Capacidad instalada en las PTARs (Litros por segundo)
+
+- Areas naturales protegidas superficie terrestre
+
+- Inclución financiera
+
+### Diferencias encontradas entre Temporalidad-Trimestral
+
+Se cuenta con datos en Trimestral pero no se citan dentro de Temporalidad
+
+- Índice de la Tendencia Laboral de la Pobreza (ITLP)
+
+- Porcentaje de la población en pobreza laboral
+
+- Ingreso laboral per cápita a pesos corrientes (nominal)
+
+- Ingreso laboral Per cápita (Deflactado con la canasta alimentaria, pesos)
